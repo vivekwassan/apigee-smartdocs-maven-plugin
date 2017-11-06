@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 bill.
+ * Copyright (C) 2016 Apigee Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,9 @@
 package com.apigee.smartdocs.config.utils;
 
 /**
- *
- * @author bill
+ * A portal field represents a config element with path and field mapping.
+ * 
+ * @author william.oconnor
  */
 public class PortalField {
   private String path;
@@ -39,7 +40,6 @@ public class PortalField {
     return this.field;
   }
 
-
   @Override
-  public String toString() { return path.toString(); } // to test
+  public String toString() { return "PortalField: " + path + " --> " + field; } // to test
 }
