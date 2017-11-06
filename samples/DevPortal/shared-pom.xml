@@ -27,6 +27,21 @@
                 <groupId>com.apigee.smartdocs.config</groupId>
                 <artifactId>apigee-smartdocs-maven-plugin</artifactId>
                 <version>1.0.0-SNAPSHOT</version>
+                <!--
+                <configuration>
+                    <portal.model.vocabulary>smartdocs_models</portal.model.vocabulary>
+                    <portal.model.fields>
+                        <department>
+                            <path>contact|x-department</path>
+                            <field>field_department</field>
+                        </department>
+                        <approval-type>
+                            <path>contact.x-approval-type</path>
+                            <field>field_approval_type</field>
+                        </approval-type>
+                    </portal.model.fields>
+                </configuration>
+                -->
                 <executions>
                     <execution>
                         <id>smartdocs-deploy</id>
