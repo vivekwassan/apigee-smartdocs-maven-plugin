@@ -17,29 +17,32 @@ package com.apigee.smartdocs.config.utils;
 
 /**
  * A portal field represents a config element with path and field mapping.
- * 
+ *
  * @author william.oconnor
  */
 public class PortalField {
+
   private String path;
   private String field;
 
-  public void setPath( String pathName ) {
+  public void setPath(String pathName) {
     this.path = pathName;
   }
 
-  public String getPath( ) {
+  public String getPath() {
     return this.path;
   }
 
-  public void setField( String fieldName ) {
+  public void setField(String fieldName) {
     this.field = fieldName;
   }
 
-  public String getField( ) {
+  public String getField() {
     return this.field;
   }
 
   @Override
-  public String toString() { return "PortalField: " + path + " --> " + field; } // to test
+  public String toString() {
+    return "PortalField: " + path + " --> " + field;
+  } // to test
 }
