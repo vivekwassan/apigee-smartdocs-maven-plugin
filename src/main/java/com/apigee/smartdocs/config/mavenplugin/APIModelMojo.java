@@ -15,19 +15,27 @@
  */
 package com.apigee.smartdocs.config.mavenplugin;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import com.apigee.smartdocs.config.rest.PortalRestUtil;
+import com.apigee.smartdocs.config.utils.ServerProfile;
+import com.apigee.smartdocs.config.utils.PortalField;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.apigee.smartdocs.config.rest.PortalRestUtil;
-import com.apigee.smartdocs.config.utils.ServerProfile;
 import com.google.api.client.util.Key;
+
+import java.io.IOException;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import com.google.gson.internal.LinkedTreeMap;
+import java.util.Collection;
+import java.util.HashMap;
 
 /**                                                                                                                                     ¡¡
  * Goal to create API Models in Apigee Developer Portal
@@ -141,6 +149,7 @@ public class APIModelMojo extends GatewayAbstractMojo {
       if (buildOption == OPTIONS.create ||
         buildOption == OPTIONS.update) {
         doUpdate();
+        addFieldData();
       }
       
       if (buildOption == OPTIONS.delete) {
@@ -196,9 +205,12 @@ public class APIModelMojo extends GatewayAbstractMojo {
     try {
       // Create a list of all specs we have on the file system.
       List<String> specNames = new ArrayList<String>();
-      for (File file : files) {
-        PortalRestUtil.SpecObject spec = PortalRestUtil.parseSpec(file);
-        specNames.add(spec.getName());
+      if (files != null && files.length > 0) {
+        for (File file : files) {
+          logger.info("FilePath: " + file.getPath());
+          PortalRestUtil.SpecObject spec = PortalRestUtil.parseSpec(file);
+          specNames.add(spec.getName());
+        }
       }
 
       // Iterate over all models and if one does not exist on the file system, delete it.
@@ -231,8 +243,71 @@ public class APIModelMojo extends GatewayAbstractMojo {
     logger.info("Get OpenAPI Specs from " + directory);
     files = new File(directory).listFiles();
   }
+  
+  public void addFieldData() {
+    try {
+      Map<String,PortalField> modelFields = serverProfile.getPortalModelFields();
+      if (modelFields != null) {
+        // Pull vocabulary based on name.
+        PortalRestUtil.VocabularyObject vo = PortalRestUtil.getVocabulary(serverProfile, serverProfile.getPortalModelVocabulary());
+      
+        // Pull taxonomy terms in vocabulary.
+        Collection<PortalRestUtil.TaxonomyTermObject> tos = PortalRestUtil.getTaxonomyTerms(serverProfile, vo.vid);
+        
+        for (File file : files) {
+          PortalRestUtil.SpecObject spec = PortalRestUtil.parseSpec(file);
+          for (PortalRestUtil.TaxonomyTermObject to: tos) {
+            // Match file and taxonomy term.
+            if (to.name.equals(spec.getName())) {
+              HashMap hs = new HashMap();
+              for (PortalField pf : modelFields.values()) {
+
+                // Elements can be embedded within the info object, so
+                // find the location, and extract the value.
+                String[] pathParts = pf.getPath().split("\\|");
+                LinkedTreeMap jo = spec.info;
+                for (String pathPart : pathParts) {
+                  // Only traverse down if the key exists.
+                  if (jo.containsKey(pathPart)) {
+                    Object o = jo.get(pathPart);
+                    // If we still need to go deeper, we have a tree.
+                    if (o instanceof LinkedTreeMap) {
+                      jo = (LinkedTreeMap)o;
+                    }
+                    else {
+                      // Otherwise, store the value in our hash.
+                      hs.put(pf.getField(), o.toString());
+                    }
+                  }
+                  else {
+                    // If we ever fail to find an item, break out.
+                    break;
+                  }
+                }
+              }
+              
+              if (!hs.isEmpty()) {
+                // If we have values, set keys and push the update.
+                hs.put("tid", to.tid);
+                hs.put("vid", to.vid);
+                hs.put("name", to.name);
+                PortalRestUtil.updateTaxonomyTerm(serverProfile, hs);
+              }
+              // Remove our matched term so we don't have to check it again.
+              tos.remove(to);
+              break;
+            }
+          } // End loop over taxonomy terms (models).
+        } // End loop over files.
+      }
+    }
+    catch (IOException e) {
+      throw new RuntimeException("Adding field data failure: " + e.getMessage());
+    }
+  }
 
 }
+
 
 
 

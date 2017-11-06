@@ -15,39 +15,23 @@
  */
 package com.apigee.smartdocs.config.rest;
 
+import com.apigee.smartdocs.config.utils.ServerProfile;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.Reader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.io.IOException;
 
 import javax.net.ssl.HttpsURLConnection;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.apigee.smartdocs.config.utils.ServerProfile;
-import com.google.api.client.http.ByteArrayContent;
-import com.google.api.client.http.FileContent;
-import com.google.api.client.http.GenericUrl;
-import com.google.api.client.http.HttpHeaders;
-import com.google.api.client.http.HttpMediaType;
-import com.google.api.client.http.HttpRequest;
-import com.google.api.client.http.HttpRequestFactory;
-import com.google.api.client.http.HttpRequestInitializer;
-import com.google.api.client.http.HttpResponse;
-import com.google.api.client.http.HttpResponseException;
-import com.google.api.client.http.HttpTransport;
-import com.google.api.client.http.MultipartContent;
+import com.google.api.client.http.*;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson.JacksonFactory;
+
 import com.google.api.client.util.Key;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -56,6 +40,17 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import com.google.gson.internal.LinkedTreeMap;
+import com.google.gson.reflect.TypeToken;
+import java.io.FileNotFoundException;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class PortalRestUtil {
 
@@ -90,18 +85,21 @@ public class PortalRestUtil {
     }
     
     public static class SpecObject {
-      public SpecInfoObject info;
+      public LinkedTreeMap info;
       
       public String getName() {
-        return info.getTitle().replace(" ", "-");
+        return info.get("title").toString().replace(" ", "-");
       }
       
       public String getTitle() {
-        return info.getTitle();
+        return info.get("title").toString();
       }
       
       public String getDescription() {
-        return info.getDescription();
+        if (info.get("description") != null) {
+          return info.get("description").toString();
+        }
+        return "";
       }
     }
     
@@ -133,6 +131,17 @@ public class PortalRestUtil {
       public String latestRevisionNumber;
       public String createdTime;
       public String modifiedTime;
+    }
+    
+    public static class VocabularyObject {
+      public String vid;
+    }
+ 
+    public static class TaxonomyTermObject {
+      public String tid;
+      public String vid;
+      public String name;
+      public String description;
     }
 
     /**
@@ -186,6 +195,7 @@ public class PortalRestUtil {
       restRequest.setReadTimeout(0);
 
       try {
+        // Call execute directly since we don't have headers yet.
         response = restRequest.execute();
 
         InputStream source = response.getContent(); //Get the data in the entity
@@ -224,11 +234,11 @@ public class PortalRestUtil {
         .buildGetRequest(new GenericUrl(
           profile.getPortalURL() + "/" + profile.getPortalPath() +
           "/smartdocs.json"));
-          restRequest.setReadTimeout(0);
       logger.info("Retrieving all models.");
 
-      response = restRequest.execute();
+      response = PortalRestUtil.executeRequest(restRequest);
 
+      Gson gson = new Gson();
       InputStream source = response.getContent(); //Get the data in the entity
       Reader reader = new InputStreamReader(source);
 
@@ -264,10 +274,9 @@ public class PortalRestUtil {
         .buildGetRequest(new GenericUrl(
           profile.getPortalURL() + "/" + profile.getPortalPath() +
           "/smartdocs/" + spec.getName() + ".json"));
-          restRequest.setReadTimeout(0);
       logger.info("Retrieve " + spec.getTitle() + " model.");
       
-      response = restRequest.execute();
+      response = PortalRestUtil.executeRequest(restRequest);
       
       Gson gson = new Gson();
       InputStream source = response.getContent(); //Get the data in the entity
@@ -293,17 +302,18 @@ public class PortalRestUtil {
   public static void createAPIModel(ServerProfile profile, File file) throws IOException {
     HttpResponse response = null;
     try {
+      // First authenticate.
+      authenticate(profile);
+
       SpecObject spec = parseSpec(file);
       ByteArrayContent content = getAPIModelContent(profile, spec);
       HttpRequest restRequest = REQUEST_FACTORY
         .buildPostRequest(new GenericUrl(
           profile.getPortalURL() + "/" + profile.getPortalPath() +
           "/smartdocs.json"), content);
-      restRequest.setReadTimeout(0);
       logger.info("Creating " + spec.getTitle() + " model.");
       
-      response = restRequest.execute();
-      logger.info(response.parseAsString());
+      response = PortalRestUtil.executeRequest(restRequest);
     }
     catch (HttpResponseException e) {
       throw e;
@@ -318,17 +328,18 @@ public class PortalRestUtil {
   public static void updateAPIModel(ServerProfile profile, File file) throws IOException {
     HttpResponse response = null;
     try {
+      // First authenticate.
+      authenticate(profile);
+
       SpecObject spec = parseSpec(file);
       ByteArrayContent content = getAPIModelContent(profile, spec);
       HttpRequest restRequest = REQUEST_FACTORY
         .buildPutRequest(new GenericUrl(
           profile.getPortalURL() + "/" + profile.getPortalPath() +
           "/smartdocs/" + spec.getName() + ".json"), content);
-      restRequest.setReadTimeout(0);
       logger.info("Updating " + spec.getTitle() + " model.");
       
-      response = restRequest.execute();
-      logger.info(response.parseAsString());
+      response = PortalRestUtil.executeRequest(restRequest);
     }
     catch (HttpResponseException e) {
       throw e;
@@ -341,15 +352,16 @@ public class PortalRestUtil {
   public static void deleteAPIModel(ServerProfile profile, String specName) throws IOException {
     HttpResponse response = null;
     try {
+      // First authenticate.
+      authenticate(profile);
+
       HttpRequest restRequest = REQUEST_FACTORY
         .buildDeleteRequest(new GenericUrl(
           profile.getPortalURL() + "/" + profile.getPortalPath() +
           "/smartdocs/" + specName + ".json"));
-      restRequest.setReadTimeout(0);
       logger.info("Deleting " + specName + " model.");
       
-      response = restRequest.execute();
-      logger.info(response.parseAsString());
+      response = PortalRestUtil.executeRequest(restRequest);
     }
     catch (HttpResponseException e) {
       throw e;
@@ -362,6 +374,9 @@ public class PortalRestUtil {
   public static void renderAPIModel(ServerProfile profile, File file) throws IOException {
     HttpResponse response = null;
     try {
+      // First authenticate.
+      authenticate(profile);
+
       SpecObject spec = parseSpec(file);
       ByteArrayContent content = new ByteArrayContent("application/json", 
         "".getBytes());
@@ -369,11 +384,9 @@ public class PortalRestUtil {
         .buildPostRequest(new GenericUrl(
           profile.getPortalURL() + "/" + profile.getPortalPath() +
           "/smartdocs/" + spec.getName() + "/render.json"), content);
-      restRequest.setReadTimeout(0);
       logger.info("Rendering " + spec.getTitle() + " OpenAPI spec.");
       
-      response = restRequest.execute();
-      logger.info(response.parseAsString());
+      response = PortalRestUtil.executeRequest(restRequest);
     }
     catch (HttpResponseException e) {
       throw e;
@@ -465,11 +478,9 @@ public class PortalRestUtil {
         .buildPostRequest(new GenericUrl(
           profile.getPortalURL() + "/" + profile.getPortalPath() +
           "/smartdocs/" + spec.getName() + "/import.json"), content);
-      restRequest.setReadTimeout(0);
       logger.info("Posting " + spec.getTitle() + " OpenAPI spec.");
       
-      response = restRequest.execute();
-      logger.info(response.parseAsString());
+      response = PortalRestUtil.executeRequest(restRequest);
 
     // Finally push the OpenAPI Spec and communicate response.
     }
@@ -491,6 +502,118 @@ public class PortalRestUtil {
     SpecObject spec = gson.fromJson(reader, SpecObject.class);
 
     return spec;
+  }
+  
+  public static VocabularyObject getVocabulary(ServerProfile profile, String machineName)
+    throws IOException {
+    HttpResponse response = null;
+    try {
+      // First authenticate.
+      authenticate(profile);
+
+      ByteArrayContent content = new ByteArrayContent("application/json", 
+        ("{\"machine_name\": \"" + machineName + "\"}").getBytes());
+      HttpRequest restRequest = REQUEST_FACTORY
+        .buildPostRequest(new GenericUrl(
+          profile.getPortalURL() + "/" + profile.getPortalPath() +
+          "/taxonomy_vocabulary/retrieveByMachineName.json"), content);
+      logger.info("Retrieving " + machineName + " vocabulary.");
+      
+      response = PortalRestUtil.executeRequest(restRequest);
+
+      Gson gson = new Gson();
+      InputStream source = response.getContent(); //Get the data in the entity
+      Reader reader = new InputStreamReader(source);
+      VocabularyObject vo = gson.fromJson(reader, VocabularyObject.class);
+      return vo;
+    }
+    catch (HttpResponseException e) {
+      throw e;
+    }
+  }
+  
+  public static Collection<TaxonomyTermObject> getTaxonomyTerms(ServerProfile profile, String vid)
+    throws IOException {
+    HttpResponse response = null;
+    try {
+      // First authenticate.
+      authenticate(profile);
+
+      ByteArrayContent content = new ByteArrayContent("application/json", 
+        ("{\"vid\": \"" + vid + "\"}").getBytes());
+      HttpRequest restRequest = REQUEST_FACTORY
+        .buildPostRequest(new GenericUrl(
+          profile.getPortalURL() + "/" + profile.getPortalPath() +
+          "/taxonomy_vocabulary/getTree.json"), content);
+      logger.info("Retrieving taxonomy terms.");
+      
+      response = PortalRestUtil.executeRequest(restRequest);
+
+      Gson gson = new Gson();
+      InputStream source = response.getContent(); //Get the data in the entity
+      Reader reader = new InputStreamReader(source);
+      Type collectionType = new TypeToken<Collection<TaxonomyTermObject>>(){}.getType();
+      Collection<TaxonomyTermObject> tos = gson.fromJson(reader, collectionType);
+      return tos;
+    }
+    catch (HttpResponseException e) {
+      throw e;
+    } 
+  }
+  
+  /**
+   * Update an existing taxonomy term (model fields). 
+   * 
+   * This updates an existing taxonomy term (model) with field data.
+   */
+  public static void updateTaxonomyTerm(ServerProfile profile, HashMap hs) throws IOException {
+    HttpResponse response = null;
+    try {
+      // First authenticate.
+      authenticate(profile);
+
+      String tid = hs.remove("tid").toString();
+      String vid = hs.remove("vid").toString();
+      String name = hs.remove("name").toString();
+      Iterator it = hs.entrySet().iterator();
+      String updateFields = "";
+      while (it.hasNext()) {
+        Map.Entry me = (Map.Entry)it.next();
+        updateFields += ",\"" + me.getKey().toString() + "\":{\"und\":[{\"value\":\"" + me.getValue().toString() + "\"}]}";
+      }
+      ByteArrayContent content = new ByteArrayContent("application/json", 
+        ("{"
+        + "\"tid\": \"" + tid + "\","
+        + "\"vid\": \"" + vid + "\","
+        + "\"name\": \"" + name + "\""
+        + updateFields
+        + "}").getBytes());
+      
+      HttpRequest restRequest = REQUEST_FACTORY
+        .buildPutRequest(new GenericUrl(
+          profile.getPortalURL() + "/" + profile.getPortalPath() +
+          "/taxonomy_term/" + tid + ".json"), content);
+      
+      logger.info("Updating taxonomy term with tid " + tid + ".");
+      response = PortalRestUtil.executeRequest(restRequest);
+    }
+    catch (HttpResponseException e) {
+      throw e;
+    }
+  }
+  
+  public static HttpResponse executeRequest(HttpRequest restRequest)  throws IOException {
+    HttpResponse response = null;
+    try {
+      restRequest.setHeaders(getHeaders());
+      restRequest.setReadTimeout(0);
+      response = restRequest.execute();
+      logger.info(response.getStatusMessage());
+    }
+    catch (HttpResponseException e) {
+      throw e;
+    }
+    return response;
   }
 
 }

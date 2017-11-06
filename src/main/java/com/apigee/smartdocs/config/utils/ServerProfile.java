@@ -15,6 +15,8 @@
  */
 package com.apigee.smartdocs.config.utils;
 
+import java.util.Map;
+
 public class ServerProfile {
 
 	private String options;
@@ -26,7 +28,9 @@ public class ServerProfile {
 	private String portalURL; // Developer Portal URL
 	private String portalPath; // Developer Portal REST base path
 	private String portalFormat; // OpenAPI spec format
-
+  private String portalModelVocabulary; // Model Vocabulary
+  private Map<String,PortalField> portalModelFields; // OpenAPI spec format
+        
   /**
    * @return the portalUser
    */
@@ -109,6 +113,34 @@ public class ServerProfile {
    */
   public void setPortalFormat(String portalFormat) {
     this.portalFormat = portalFormat;
+  }
+  
+  /**
+   * @param portalModelVocabulary the portalModelVocabulary to set
+   */
+  public void setPortalModelVocabulary(String portalModelVocabulary) {
+    this.portalModelVocabulary = portalModelVocabulary;
+  }
+  
+  /**
+   * @return the portalModelFields
+   */
+  public String getPortalModelVocabulary() {
+    return portalModelVocabulary;
+  }
+  
+  /**
+   * @return the portalModelFields
+   */
+  public Map<String,PortalField> getPortalModelFields() {
+    return portalModelFields;
+  }
+  
+  /**
+   * @param portalModelFields the portalModelFields to set
+   */
+  public void setPortalModelFields(Map<String,PortalField> portalModelFields) {
+    this.portalModelFields = portalModelFields;
   }
 
 	/**
