@@ -43,6 +43,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
 import java.io.FileNotFoundException;
+import java.io.StringReader;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -51,6 +52,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.json.simple.JSONValue;
+import org.yaml.snakeyaml.Yaml;
 
 public class PortalRestUtil {
 
@@ -103,20 +106,10 @@ public class PortalRestUtil {
       }
       return "";
     }
-  }
-
-  public static class SpecInfoObject {
-
-    public String title;
-    public String description;
-    public String version;
-
-    public String getTitle() {
-      return title;
-    }
-
-    public String getDescription() {
-      return description;
+    
+    @Override
+    public String toString() {
+      return "(SpecObject) Name: " + getName() + "; Title: " + getTitle(); 
     }
   }
 
@@ -275,7 +268,7 @@ public class PortalRestUtil {
       // First authenticate.
       authenticate(profile);
 
-      SpecObject spec = parseSpec(file);
+      SpecObject spec = parseSpec(profile, file);
       HttpRequest restRequest = REQUEST_FACTORY
               .buildGetRequest(new GenericUrl(
                               profile.getPortalURL() + "/" + profile.getPortalPath()
@@ -309,7 +302,7 @@ public class PortalRestUtil {
       // First authenticate.
       authenticate(profile);
 
-      SpecObject spec = parseSpec(file);
+      SpecObject spec = parseSpec(profile, file);
       ByteArrayContent content = getAPIModelContent(profile, spec);
       HttpRequest restRequest = REQUEST_FACTORY
               .buildPostRequest(new GenericUrl(
@@ -334,7 +327,7 @@ public class PortalRestUtil {
       // First authenticate.
       authenticate(profile);
 
-      SpecObject spec = parseSpec(file);
+      SpecObject spec = parseSpec(profile, file);
       ByteArrayContent content = getAPIModelContent(profile, spec);
       HttpRequest restRequest = REQUEST_FACTORY
               .buildPutRequest(new GenericUrl(
@@ -378,7 +371,7 @@ public class PortalRestUtil {
       // First authenticate.
       authenticate(profile);
 
-      SpecObject spec = parseSpec(file);
+      SpecObject spec = parseSpec(profile, file);
       ByteArrayContent content = new ByteArrayContent("application/json",
               "".getBytes());
       HttpRequest restRequest = REQUEST_FACTORY
@@ -437,9 +430,16 @@ public class PortalRestUtil {
       } else {
         updateAPIModel(profile, file);
       }
+      
+      String contentType = "application/json";
+      String fileType = "json";
+      if (profile.getPortalFormat().equals("yaml")) {
+        contentType = "application/x-yaml";
+        fileType = "yaml";
+      }
 
-      FileContent tempFileContent = new FileContent("application/json", file);
-      SpecObject spec = parseSpec(file);
+      FileContent tempFileContent = new FileContent(contentType, file);
+      SpecObject spec = parseSpec(profile, file);
 
       // Then build the OpenAPI Spec command.
       MultipartContent.Part filePart = new MultipartContent.Part(tempFileContent)
@@ -449,7 +449,7 @@ public class PortalRestUtil {
                       ));
 
       MultipartContent.Part typePart = new MultipartContent.Part(
-              new ByteArrayContent(null, "json".getBytes())
+              new ByteArrayContent(null, fileType.getBytes())
       )
               .setHeaders(new HttpHeaders().set(
                               "Content-Disposition",
@@ -491,12 +491,33 @@ public class PortalRestUtil {
    * Helper function to parse a json formatted OpenAPI spec and turn it into an
    * object containing the properties we will reuse.
    */
-  public static SpecObject parseSpec(File file) throws FileNotFoundException {
-    FileContent tempFileContent = new FileContent("application/json", file);
-    Reader reader = new InputStreamReader(tempFileContent.getInputStream());
+  public static SpecObject parseSpec(ServerProfile profile, File file) throws FileNotFoundException {
+    
+    SpecObject spec = new SpecObject();
+    try {
+      Reader reader = null;
+      if (profile.getPortalFormat().equals("yaml")) {
 
-    Gson gson = new Gson();
-    SpecObject spec = gson.fromJson(reader, SpecObject.class);
+        // Read in the YAML file.
+        FileContent tempFileContent = new FileContent("application/x-yaml", file);
+        Reader yamlReader = new InputStreamReader(tempFileContent.getInputStream());
+        Yaml yaml = new Yaml();
+        Object obj = yaml.load(yamlReader);
+
+        // Convert it to a JSON file for consistent handling.
+        String YAMLString = JSONValue.toJSONString(obj);
+        reader = new StringReader(YAMLString);
+      }
+      else {
+        FileContent tempFileContent = new FileContent("application/json", file);
+        reader = new InputStreamReader(tempFileContent.getInputStream());
+      }
+      Gson gson = new Gson();
+      spec = gson.fromJson(reader, SpecObject.class);
+    }
+    catch (IOException e) {
+      logger.error(e.getMessage());
+    }
 
     return spec;
   }

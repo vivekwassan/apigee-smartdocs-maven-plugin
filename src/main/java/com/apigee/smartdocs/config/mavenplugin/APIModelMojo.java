@@ -54,7 +54,7 @@ public class APIModelMojo extends GatewayAbstractMojo {
   "************************************************************************";
 
   enum OPTIONS {
-    none, create, update, delete, render
+    none, create, update, delete, sync, render
   }
 
   OPTIONS buildOption = OPTIONS.none;
@@ -160,6 +160,13 @@ public class APIModelMojo extends GatewayAbstractMojo {
         doRender();
       }
 
+      if (buildOption == OPTIONS.sync) {
+        doUpdate();
+        addFieldData();
+        doRender();
+        doDelete();
+      }
+
     } catch (MojoFailureException e) {
       throw e;
     } catch (RuntimeException e) {
@@ -208,7 +215,7 @@ public class APIModelMojo extends GatewayAbstractMojo {
       if (files != null && files.length > 0) {
         for (File file : files) {
           logger.info("FilePath: " + file.getPath());
-          PortalRestUtil.SpecObject spec = PortalRestUtil.parseSpec(file);
+          PortalRestUtil.SpecObject spec = PortalRestUtil.parseSpec(serverProfile, file);
           specNames.add(spec.getName());
         }
       }
@@ -246,6 +253,7 @@ public class APIModelMojo extends GatewayAbstractMojo {
   
   public void addFieldData() {
     try {
+      logger.info("Add field data.");
       Map<String,PortalField> modelFields = serverProfile.getPortalModelFields();
       if (modelFields != null) {
         // Pull vocabulary based on name.
@@ -255,13 +263,13 @@ public class APIModelMojo extends GatewayAbstractMojo {
         Collection<PortalRestUtil.TaxonomyTermObject> tos = PortalRestUtil.getTaxonomyTerms(serverProfile, vo.vid);
         
         for (File file : files) {
-          PortalRestUtil.SpecObject spec = PortalRestUtil.parseSpec(file);
+          PortalRestUtil.SpecObject spec = PortalRestUtil.parseSpec(serverProfile, file);
+          logger.info("Pushing fields for " + spec.getTitle());
           for (PortalRestUtil.TaxonomyTermObject to: tos) {
             // Match file and taxonomy term.
             if (to.name.equals(spec.getName())) {
               HashMap hs = new HashMap();
               for (PortalField pf : modelFields.values()) {
-
                 // Elements can be embedded within the info object, so
                 // find the location, and extract the value.
                 String[] pathParts = pf.getPath().split("\\|");
@@ -277,6 +285,7 @@ public class APIModelMojo extends GatewayAbstractMojo {
                     else {
                       // Otherwise, store the value in our hash.
                       hs.put(pf.getField(), o.toString());
+                      logger.debug("Push " + pf.getField() + " as " + o.toString());
                     }
                   }
                   else {
