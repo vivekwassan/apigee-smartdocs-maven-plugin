@@ -191,7 +191,7 @@
         <artifactId>maven-plugin-plugin</artifactId>
         <version>3.2</version>
         <configuration>
-          <goalPrefix>apigee-sdmartdocs</goalPrefix>
+          <goalPrefix>apigee-smartdocs</goalPrefix>
           <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
         </configuration>
         <executions>
