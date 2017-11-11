@@ -1,6 +1,6 @@
 # apigee-smartdocs-maven-plugin
 
-
+**This is a work in progress plugin - please contact me before you use. Once we have some features built in, we will open source this plugin**
 
 
 
