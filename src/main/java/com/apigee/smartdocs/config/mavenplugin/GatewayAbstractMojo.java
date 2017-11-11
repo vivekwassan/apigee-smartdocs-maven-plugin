@@ -1,88 +1,90 @@
 /**
  * Copyright (C) 2016 Apigee Corporation
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  */
 package com.apigee.smartdocs.config.mavenplugin;
 
 import java.io.File;
+import java.util.Map;
 import org.apache.maven.plugin.AbstractMojo;
 import com.apigee.smartdocs.config.utils.ServerProfile;
+import com.apigee.smartdocs.config.utils.PortalField;
 
 public abstract class GatewayAbstractMojo extends AbstractMojo {
 
-	/**
-	 * Directory containing the build files.
-	 *
-	 * @parameter property="project.build.directory"
-	 */
-	private File buildDirectory;
+  /**
+   * Directory containing the build files.
+   *
+   * @parameter property="project.build.directory"
+   */
+  private File buildDirectory;
 
-	/**
-	 * Base directory of the project.
-	 *
-	 * @parameter property="basedir"
-	 */
-	private File baseDirectory;
+  /**
+   * Base directory of the project.
+   *
+   * @parameter property="basedir"
+   */
+  private File baseDirectory;
 
-	/**
-	 * Project Name
-	 *
-	 * @parameter property="project.name"
-	 */
-	private String projectName;
+  /**
+   * Project Name
+   *
+   * @parameter property="project.name"
+   */
+  private String projectName;
 
-	/**
-	 * Project version
-	 *
-	 * @parameter property="project.version"
-	 */
-	private String projectVersion;
+  /**
+   * Project version
+   *
+   * @parameter property="project.version"
+   */
+  private String projectVersion;
 
-	/**
-	 * Project artifact id
-	 *
-	 * @parameter property="project.artifactId"
-	 */
-	private String artifactId;
+  /**
+   * Project artifact id
+   *
+   * @parameter property="project.artifactId"
+   */
+  private String artifactId;
 
-	/**
-	 * Profile id
-	 *
-	 * @parameter property="apigee.profile"
-	 */
-	private String id;
+  /**
+   * Profile id
+   *
+   * @parameter property="apigee.profile"
+   */
+  private String id;
 
-	/**
-	 * Build option
-	 *
-	 * @parameter property="build.option"
-	 */
-	private String buildOption;
+  /**
+   * Build option
+   *
+   * @parameter property="build.option"
+   */
+  private String buildOption;
 
+  /**
+   * Gateway options
+   *
+   * @parameter property="apigee.smartdocs.config.options"
+   */
+  private String options;
 
-	/**
-	 * Gateway options
-	 *
-	 * @parameter property="apigee.smartdocs.config.options"
-	 */
-	private String options;
-
-	/**
-	 * Config dir
-	 * @parameter property="apigee.smartdocs.config.dir"
- 	 */
-	private String configDir;
+  /**
+   * Config dir
+   *
+   * @parameter property="apigee.smartdocs.config.dir"
+   */
+  private String configDir;
 
   /**
    * Portal User Name
@@ -119,96 +121,107 @@ public abstract class GatewayAbstractMojo extends AbstractMojo {
    */
   private String portalPath;
 
-/**
+  /**
    * Portal Format
    *
    * @parameter property="portal.format"
    */
   private String portalFormat;
 
-	/**
-	* Skip running this plugin.
-	* Default is false.
-	*
-	* @parameter default-value="false"
-	*/
-	private boolean skip = false;
+  /**
+   * Portal Format
+   *
+   * @parameter alias="portal.model.vocabulary"
+   */
+  private String portalModelVocabulary;
 
-	public ServerProfile buildProfile;
+  /**
+   * Portal Model Fields
+   *
+   * @parameter alias="portal.model.fields"
+   */
+  private Map<String, PortalField> portalModelFields;
 
-	public GatewayAbstractMojo(){
-		super();
+  /**
+   * Skip running this plugin. Default is false.
+   *   
+* @parameter default-value="false"
+   */
+  private boolean skip = false;
 
-	}
+  public ServerProfile buildProfile;
 
-	public ServerProfile getProfile() {
-		this.buildProfile = new ServerProfile();
-		this.buildProfile.setOptions(this.options);
-		this.buildProfile.setPortalUserName(this.portalUserName);
-		this.buildProfile.setPortalPassword(this.portalPassword);
-		this.buildProfile.setPortalDirectory(this.portalDirectory);
-		this.buildProfile.setPortalURL(this.portalURL);
-		this.buildProfile.setPortalPath(this.portalPath);
-		this.buildProfile.setPortalFormat(this.portalFormat);
+  public GatewayAbstractMojo() {
+    super();
+  }
 
-		return buildProfile;
-	}
+  public ServerProfile getProfile() {
+    this.buildProfile = new ServerProfile();
+    this.buildProfile.setOptions(this.options);
+    this.buildProfile.setPortalUserName(this.portalUserName);
+    this.buildProfile.setPortalPassword(this.portalPassword);
+    this.buildProfile.setPortalDirectory(this.portalDirectory);
+    this.buildProfile.setPortalURL(this.portalURL);
+    this.buildProfile.setPortalPath(this.portalPath);
+    this.buildProfile.setPortalFormat(this.portalFormat);
+    this.buildProfile.setPortalModelFields(this.portalModelFields);
+    this.buildProfile.setPortalModelVocabulary(this.portalModelVocabulary);
 
-	public void setProfile(ServerProfile profile) {
-		this.buildProfile = profile;
-	}
+    return buildProfile;
+  }
 
-	public void setBaseDirectory(File baseDirectory) {
-		this.baseDirectory = baseDirectory;
-	}
+  public void setProfile(ServerProfile profile) {
+    this.buildProfile = profile;
+  }
 
-	public String getBuildDirectory() {
-		return this.buildDirectory.getAbsolutePath();
-	}
+  public void setBaseDirectory(File baseDirectory) {
+    this.baseDirectory = baseDirectory;
+  }
 
-	public String getBaseDirectoryPath(){
-		return this.baseDirectory.getAbsolutePath();
-	}
+  public String getBuildDirectory() {
+    return this.buildDirectory.getAbsolutePath();
+  }
 
-	public String getBuildOption() {
-		return buildOption;
-	}
+  public String getBaseDirectoryPath() {
+    return this.baseDirectory.getAbsolutePath();
+  }
 
-	public void setBuildOption(String buildOption) {
-		this.buildOption = buildOption;
-	}
+  public String getBuildOption() {
+    return buildOption;
+  }
 
-	public String getOptions() {
-		return options;
-	}
+  public void setBuildOption(String buildOption) {
+    this.buildOption = buildOption;
+  }
 
-	public void setOptions(String options) {
-		this.options = options;
-	}
+  public String getOptions() {
+    return options;
+  }
 
-	/**
-	 * @return the id
-	 */
-	public String getId() {
-		return id;
-	}
+  public void setOptions(String options) {
+    this.options = options;
+  }
 
+  /**
+   * @return the id
+   */
+  public String getId() {
+    return id;
+  }
 
-	/**
-	 * @param id the id to set
-	 */
-	public void setId(String id) {
-		this.id = id;
-	}
+  /**
+   * @param id the id to set
+   */
+  public void setId(String id) {
+    this.id = id;
+  }
 
+  public boolean isSkip() {
+    return skip;
+  }
 
-	public boolean isSkip() {
-		return skip;
-	}
-
-
-	public void setSkip(boolean skip) {
-		this.skip = skip;
-	}
+  public void setSkip(boolean skip) {
+    this.skip = skip;
+  }
 
 }

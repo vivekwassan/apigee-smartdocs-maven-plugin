@@ -1,31 +1,35 @@
 /**
  * Copyright (C) 2016 Apigee Corporation
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
  *
- *         http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
  */
 package com.apigee.smartdocs.config.utils;
 
+import java.util.Map;
+
 public class ServerProfile {
 
-	private String options;
+  private String options;
 
-	// Portal Parameters
-	private String portalUserName; // Developer Portal Username
-	private String portalPassword; // Developer Portal Password
-	private String portalDirectory; // Directory holding OpenAPI specs
-	private String portalURL; // Developer Portal URL
-	private String portalPath; // Developer Portal REST base path
-	private String portalFormat; // OpenAPI spec format
+  // Portal Parameters
+  private String portalUserName; // Developer Portal Username
+  private String portalPassword; // Developer Portal Password
+  private String portalDirectory; // Directory holding OpenAPI specs
+  private String portalURL; // Developer Portal URL
+  private String portalPath; // Developer Portal REST base path
+  private String portalFormat; // OpenAPI spec format
+  private String portalModelVocabulary; // Model Vocabulary
+  private Map<String, PortalField> portalModelFields; // OpenAPI spec format
 
   /**
    * @return the portalUser
@@ -111,16 +115,43 @@ public class ServerProfile {
     this.portalFormat = portalFormat;
   }
 
-	/**
-	 * @param options the options to set
-	 */
+  /**
+   * @param portalModelVocabulary the portalModelVocabulary to set
+   */
+  public void setPortalModelVocabulary(String portalModelVocabulary) {
+    this.portalModelVocabulary = portalModelVocabulary;
+  }
 
-	public String getOptions() {
-		return options;
-	}
+  /**
+   * @return the portalModelFields
+   */
+  public String getPortalModelVocabulary() {
+    return portalModelVocabulary;
+  }
 
-	public void setOptions(String options) {
-		this.options = options;
-	}
+  /**
+   * @return the portalModelFields
+   */
+  public Map<String, PortalField> getPortalModelFields() {
+    return portalModelFields;
+  }
+
+  /**
+   * @param portalModelFields the portalModelFields to set
+   */
+  public void setPortalModelFields(Map<String, PortalField> portalModelFields) {
+    this.portalModelFields = portalModelFields;
+  }
+
+  /**
+   * @param options the options to set
+   */
+  public String getOptions() {
+    return options;
+  }
+
+  public void setOptions(String options) {
+    this.options = options;
+  }
 
 }
