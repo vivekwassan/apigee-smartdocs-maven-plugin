@@ -1,4 +1,6 @@
-target/
 .DS_Store
-.git
-
+target/
+bin/
+.settings
+.classpath
+.project
