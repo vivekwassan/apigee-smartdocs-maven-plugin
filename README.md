@@ -29,9 +29,11 @@ mvn install -Pdev -Dapigee.smartdocs.config.options=create
     none   - No action (default)
     create - Creates the model
     update - Updates the model
-    delete - Delete all config listed in edge.json
+    delete - Deleted all models not found in the OpenAPI Spec directory
     render - Renders the smart docs 
-    sync   - Delete and recreate the models. This also renders the smart docs as well
+    sync   - executes the delete option (mentioned above) and recreates the models found in the OpenAPI Spec directory. This also renders the smart docs as well
+    
+   If you use create or update option, you will need to run the command again with option as render
 ```
 
 ## Support
