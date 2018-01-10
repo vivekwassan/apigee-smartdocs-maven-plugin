@@ -32,7 +32,8 @@ mvn install -Pdev -Dapigee.smartdocs.config.options=create
     delete - Delete all config listed in edge.json
     render - Renders the smart docs 
     sync   - Delete and recreate the models. This also renders the smart docs as well
-    
+```
+
 ## Support
 * Please send feature requests using [issues](https://github.com/apigee/apigee-smartdocs-maven-plugin/issues)
 * Post a question in [Apigee community](https://community.apigee.com/index.html)
